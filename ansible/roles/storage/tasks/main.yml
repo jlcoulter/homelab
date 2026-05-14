@@ -1,0 +1,26 @@
+- name: Ensure mount point exists
+  ansible.builtin.file:
+    path: "{{ docker_data_mount }}"
+    state: directory
+    mode: '0755'
+
+- name: Ensure partition exists and fills disk
+  community.general.parted:
+    device: "{{ secondary_disk }}"
+    number: 1
+    state: present
+    part_end: "100%"
+    resize: true
+
+- name: Ensure ext4 filesystem exists
+  community.general.filesystem:
+    fstype: ext4
+    dev: "{{ secondary_disk }}1"
+    resizefs: true
+
+- name: Mount persistent disk
+  ansible.posix.mount:
+    path: "{{ docker_data_mount }}"
+    src: "{{ secondary_disk }}1"
+    fstype: ext4
+    state: mounted

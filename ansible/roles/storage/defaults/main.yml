@@ -1,0 +1,5 @@
+---
+# Storage role defaults
+# These are host/group-specific values for the storage role.
+docker_data_mount: "/mnt/docker_data"
+secondary_disk: "/dev/sdb"

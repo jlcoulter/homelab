@@ -1,0 +1,23 @@
+---
+# Apps role defaults
+apps_base_dir: /opt
+apps_managed_apps:
+  - adguard
+  - adguard-sync
+  - traefik
+  - homepage
+  - gitea
+apps_config_map:
+  homepage:
+    config_dir: /mnt/docker_data/homepage/config
+    files:
+      - settings.yaml
+      - services.yaml
+      - docker.yaml
+      - bookmarks.yaml
+    src_dir: "../apps/homepage"
+  traefik:
+    config_dir: /etc/traefik
+    files:
+      - dynamic.yml
+    src_dir: "../apps/traefik"

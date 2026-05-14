@@ -13,9 +13,4 @@ app_mapping:
   ubuntu-rpi4-1:
     - traefik
 
-all_managed_apps:
-  - adguard
-  - adguard-sync
-  - traefik
-  - homepage
-  - gitea
+ansible_python_interpreter: /usr/bin/python3
