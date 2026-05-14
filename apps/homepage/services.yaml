@@ -9,9 +9,18 @@
         href: http://adguard-sync.local/
         icon: adguard-home.png
 
-    - Service C:
-        href: http://localhost/
+- Infrastructure:
+    - Proxmox:
+        icon: proxmox.png
+        href: http://pve.local/
+        description: Proxmox Virtual Environment
 
-- Group B:
-    - Service D:
-        href: http://localhost/
+    - Proxmox Backup Server:
+        icon: proxmox.png
+        href: http://pbs.local/
+        description: Proxmox Backup Server
+        
+    - NAS:
+        icon: synology.png
+        href: http://nas.local/
+        description: Synology NAS

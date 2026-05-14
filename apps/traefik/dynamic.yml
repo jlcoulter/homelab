@@ -3,38 +3,44 @@ http:
     adguard-router:
       rule: "Host(`adguard.local`)"
       entryPoints:
-        - web
+        - websecure
       service: adguard-service
+      tls: {}
 
     adguard-sync-router:
       rule: "Host(`adguard-sync.local`)"
       entryPoints:
-        - web
+        - websecure
       service: adguard-sync-service
+      tls: {}
     
     homepage-router:
       rule: "Host(`homepage.local`)"
       entryPoints:
-        - web
+        - websecure
       service: homepage-service
+      tls: {}
     
     proxmox-router:
       rule: "Host(`pve.local`)"
       entryPoints:
-        - web
+        - websecure
       service: proxmox-service
+      tls: {}
 
     proxmox-backup-router:
       rule: "Host(`pbs.local`)"
       entryPoints:
-        - web
+        - websecure
       service: proxmox-backup-service
+      tls: {}
     
     nas-router:
       rule: "Host(`nas.local`)"
       entryPoints:
-        - web
+        - websecure
       service: nas-service
+      tls: {}
 
   services:
     adguard-service:
@@ -65,4 +71,4 @@ http:
     nas-service:
       loadBalancer:
         servers:
-          - url: "http://10.1.10.15:5001"
+          - url: "https://10.1.10.15:5001"
