@@ -1,0 +1,25 @@
+---
+services:
+  adguardhome-sync:
+    image: ghcr.io/bakito/adguardhome-sync
+    container_name: adguardhome-sync
+    command: run
+    environment:
+      # CRON: Run every 10 minutes (example)
+      - CRON=*/10 * * * *
+      - RUN_ON_START=true
+      
+      # Origin (The "Master" instance)
+      - ORIGIN_URL=http://10.1.10.100:80
+      - ORIGIN_USERNAME=jlcoulter
+      - ORIGIN_PASSWORD={{ adguard_password }}
+      
+      # Replica 1 (The "Backup" instance)
+      - REPLICA1_URL=http://10.1.10.93:80
+      - REPLICA1_USERNAME=jlcoulter
+      - REPLICA1_PASSWORD={{ adguard_password }}
+    volumes:
+      - /mnt/docker_data/adguard-sync/config/adguardhome-sync.yaml:/config/adguardhome-sync.yaml
+    ports:
+      - 8081:8080
+    restart: unless-stopped

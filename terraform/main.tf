@@ -80,6 +80,10 @@ resource "proxmox_virtual_environment_vm" "docker_vms" {
   initialization {
     datastore_id = "local-zfs"
 
+    dns {
+      servers = [ each.key == "prod-docker-01" ? "127.0.0.1" : "10.1.10.100" ]
+    }
+
     user_account {
       username = "jc"
       password = var.user_password
@@ -88,7 +92,7 @@ resource "proxmox_virtual_environment_vm" "docker_vms" {
         ip_config {
       ipv4 {
         address = "${each.value.ip}/24"
-        gateway = "10.1.1.1"
+        gateway = "10.1.10.1"
       }
     }
   }

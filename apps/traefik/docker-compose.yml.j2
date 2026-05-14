@@ -1,0 +1,21 @@
+services:
+  traefik:
+    image: traefik:v3.0
+    container_name: traefik
+    restart: always
+    ports:
+      - "80:80"     # HTTP
+      - "443:443"   # HTTPS
+      - "8080:8080"   # Traefik Dashboard
+    volumes:
+      - /etc/traefik:/etc/traefik:ro # Uncomment if using a config file
+    command:
+      # Enable Dashboard
+      - --api.insecure=true 
+      - --api.dashboard=true
+      # Entrypoints
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      # Providers
+      - --providers.file.directory=/etc/traefik
+      - --providers.file.watch=true

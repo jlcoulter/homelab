@@ -1,0 +1,39 @@
+http:
+  routers:
+    # Router for AdGuard Home Web Interface
+    adguard-router:
+      rule: "Host(`adguard.local`)"
+      entryPoints:
+        - web
+      service: adguard-service
+
+    # Router for AdGuard Sync Interface
+    adguard-sync-router:
+      rule: "Host(`adguard-sync.local`)"
+      entryPoints:
+        - web
+      service: adguard-sync-service
+    
+    homepage-router:
+      rule: "Host(`homepage.local`)"
+      entryPoints:
+        - web
+      service: homepage-service
+
+  services:
+    # Service for AdGuard Home
+    adguard-service:
+      loadBalancer:
+        servers:
+          - url: "http://10.1.10.100:80"
+
+    # Service for AdGuard Sync
+    adguard-sync-service:
+      loadBalancer:
+        servers:
+          - url: "http://10.1.10.93:8081"
+
+    homepage-service:
+      loadBalancer:
+        servers:
+          - url: "http://10.1.10.100:3333"

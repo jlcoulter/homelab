@@ -1,10 +1,13 @@
 ---
-- Group A:
-    - Service A:
-        href: http://localhost/
+- Network:
+    - AdGuard Home:
+        href: http://adguard.local/
+        icon: adguard-home.png
+        description: Network-wide Ad Blocking
 
-    - Service B:
-        href: http://localhost/
+    - AdGuard Home Sync:
+        href: http://adguard-sync.local/
+        icon: adguard-home.png
 
     - Service C:
         href: http://localhost/

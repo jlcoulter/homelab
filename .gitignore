@@ -18,3 +18,4 @@ crash.*.log
 **/.ansible/*
 *.retry
 .ansible
+.vault_pass

@@ -1,7 +1,7 @@
 ## --- RECONCILE STATE ---
-- name: "Determine if should be active on {{ app_name }}/{{ inventory_hostname }}"
+- name: "Determine if should app is assigned to this host: {{ app_name }}"
   ansible.builtin.set_fact:
-    is_assigned: "{{ app_name in (app_mapping[inventory_hostname] | default([])) }}"
+    is_assigned: "{{ app_name in (app_mapping.get(inventory_hostname) | default([])) }}"
 
 ## --- NETWORKING (DNS FIX) ---
 - name: Fix port 53 conflict for adguard
@@ -40,16 +40,16 @@
   register: app_dir
 
 - name: "Sync compose file for {{ app_name }}"
-  ansible.builtin.copy:
+  ansible.builtin.template:
     owner: root
     group: root
-    mode: '0644'
-    src: "../apps/{{ app_name }}/docker-compose.yml"
+    mode: '0600'
+    src: "{{ playbook_dir }}/../apps/{{ app_name }}/docker-compose.yml.j2"
     dest: "/opt/{{ app_name }}/docker-compose.yml"
 
 ## --- HOMEPAGE CONFIG MANAGEMENT ---
 - name: "Ensure Homepage config directory exists"
-  when: 
+  when:
     - app_name == "homepage"
     - is_assigned | bool
   ansible.builtin.file:
@@ -60,7 +60,7 @@
     mode: '0755'
 
 - name: "Sync Homepage configuration files"
-  when: 
+  when:
     - app_name == "homepage"
     - is_assigned | bool
   ansible.builtin.copy:
@@ -74,8 +74,31 @@
     - services.yaml
     - docker.yaml
     - bookmarks.yaml
-    # widgets.yaml 
+    # widgets.yaml
     # kubernetes.yaml
+
+  ## --- TRAEFIK CONFIG MANAGEMENT ---
+- name: "Ensure Traefik config directory exists"
+  when: 
+    - app_name == "traefik"
+    - is_assigned | bool
+  ansible.builtin.file:
+    path: "/etc/traefik"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: "Sync Traefik dynamic configuration"
+  when: 
+    - app_name == "traefik"
+    - is_assigned | bool
+  ansible.builtin.copy:
+    src: "../apps/{{ app_name }}/dynamic.yml"
+    dest: "/etc/traefik/"
+    owner: root
+    group: root
+    mode: '0644'
 
 ## --- DOCKER ENFORCEMENT ---
 - name: "Set Docker Compose state for {{ app_name }}"

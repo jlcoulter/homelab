@@ -6,35 +6,40 @@
     secondary_disk: "/dev/sdb"
     ansible_python_interpreter: /usr/bin/python3
     docker_repository_url: "https://download.docker.com/linux/ubuntu"
+  vars_files:
+    - "vars/secrets.yml"
 
   tasks:
     ## --- STORAGE MANAGEMENT ---
-    - name: Ensure mount point exists
-      ansible.builtin.file:
-        path: "{{ docker_data_mount }}"
-        state: directory
-        mode: '0755'
+    - name: Configure Storage for vms group
+      when: "'vms' in group_names"
+      block:
+        - name: Ensure mount point exists
+          ansible.builtin.file:
+            path: "{{ docker_data_mount }}"
+            state: directory
+            mode: '0755'
 
-    - name: Ensure partition exists and fills disk
-      community.general.parted:
-        device: "{{ secondary_disk }}"
-        number: 1
-        state: present
-        part_end: "100%"
-        resize: true
+        - name: Ensure partition exists and fills disk
+          community.general.parted:
+            device: "{{ secondary_disk }}"
+            number: 1
+            state: present
+            part_end: "100%"
+            resize: true
 
-    - name: Ensure ext4 filesystem exists
-      community.general.filesystem:
-        fstype: ext4
-        dev: "{{ secondary_disk }}1"
-        resizefs: true
+        - name: Ensure ext4 filesystem exists
+          community.general.filesystem:
+            fstype: ext4
+            dev: "{{ secondary_disk }}1"
+            resizefs: true
 
-    - name: Mount persistent disk
-      ansible.posix.mount:
-        path: "{{ docker_data_mount }}"
-        src: "{{ secondary_disk }}1"
-        fstype: ext4
-        state: mounted
+        - name: Mount persistent disk
+          ansible.posix.mount:
+            path: "{{ docker_data_mount }}"
+            src: "{{ secondary_disk }}1"
+            fstype: ext4
+            state: mounted
 
     ## --- DOCKER INSTALLATION ---
     - name: Install dependencies
@@ -57,7 +62,7 @@
 
     - name: Add Docker repository
       ansible.builtin.apt_repository:
-        repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] {{ docker_repository_url }} {{ ansible_facts['distribution_release'] }} stable"
+        repo: "deb [arch={{ 'amd64' if ansible_architecture == 'x86_64' else 'arm64' }} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
         state: present
         filename: docker
 

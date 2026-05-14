@@ -1,16 +1,21 @@
 app_mapping:
   prod-docker-01:
     - adguard
-  prod-docker-02:
-  prod-docker-03:
-  test-docker-01:
-    - adguard
     - homepage
+  test-docker-01:
+    - gitea
+  ubuntu-rpi3-0: []
+  ubuntu-rpi3-1: []
+  ubuntu-rpi3-2: []
+  ubuntu-rpi4-0:
+    - adguard
+    - adguard-sync
+  ubuntu-rpi4-1:
     - traefik
-  test-docker-02:
 
 all_managed_apps:
   - adguard
-  - gitea
-  - homepage
+  - adguard-sync
   - traefik
+  - homepage
+  - gitea
