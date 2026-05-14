@@ -1,8 +1,8 @@
 ---
 - Developer:
     - Github:
-        - abbr: GH
-          href: https://github.com/
+        - icon: github.png
+          href: https://github.com/jlcoulter?tab=repositories
 
 - Social:
     - Reddit:
@@ -12,5 +12,5 @@
 
 - Entertainment:
     - YouTube:
-        - abbr: YT
+        - icon: youtube.png
           href: https://youtube.com/

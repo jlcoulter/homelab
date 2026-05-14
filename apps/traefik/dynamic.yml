@@ -1,13 +1,11 @@
 http:
   routers:
-    # Router for AdGuard Home Web Interface
     adguard-router:
       rule: "Host(`adguard.local`)"
       entryPoints:
         - web
       service: adguard-service
 
-    # Router for AdGuard Sync Interface
     adguard-sync-router:
       rule: "Host(`adguard-sync.local`)"
       entryPoints:
@@ -19,15 +17,31 @@ http:
       entryPoints:
         - web
       service: homepage-service
+    
+    proxmox-router:
+      rule: "Host(`pve.local`)"
+      entryPoints:
+        - web
+      service: proxmox-service
+
+    proxmox-backup-router:
+      rule: "Host(`pbs.local`)"
+      entryPoints:
+        - web
+      service: proxmox-backup-service
+    
+    nas-router:
+      rule: "Host(`nas.local`)"
+      entryPoints:
+        - web
+      service: nas-service
 
   services:
-    # Service for AdGuard Home
     adguard-service:
       loadBalancer:
         servers:
           - url: "http://10.1.10.100:80"
 
-    # Service for AdGuard Sync
     adguard-sync-service:
       loadBalancer:
         servers:
@@ -37,3 +51,18 @@ http:
       loadBalancer:
         servers:
           - url: "http://10.1.10.100:3333"
+
+    proxmox-service:
+      loadBalancer:
+        servers:
+          - url: "https://10.1.10.10:8006"
+
+    proxmox-backup-service:
+      loadBalancer:
+        servers:
+          - url: "https://10.1.10.250:8007"
+
+    nas-service:
+      loadBalancer:
+        servers:
+          - url: "http://10.1.10.15:5001"

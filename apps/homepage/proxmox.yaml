@@ -1,0 +1,5 @@
+---
+pve:
+  url: http://proxmox.local
+  token: username@pam!Token ID
+  secret: secret
