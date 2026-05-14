@@ -1,0 +1,16 @@
+app_mapping:
+  prod-docker-01:
+    - adguard
+  prod-docker-02:
+  prod-docker-03:
+  test-docker-01:
+    - adguard
+    - homepage
+    - traefik
+  test-docker-02:
+
+all_managed_apps:
+  - adguard
+  - gitea
+  - homepage
+  - traefik

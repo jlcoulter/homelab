@@ -1,0 +1,94 @@
+- name: Prepare Docker Hosts
+  hosts: all
+  become: true
+  vars:
+    docker_data_mount: "/mnt/docker_data"
+    secondary_disk: "/dev/sdb"
+    ansible_python_interpreter: /usr/bin/python3
+    docker_repository_url: "https://download.docker.com/linux/ubuntu"
+
+  tasks:
+    ## --- STORAGE MANAGEMENT ---
+    - name: Ensure mount point exists
+      ansible.builtin.file:
+        path: "{{ docker_data_mount }}"
+        state: directory
+        mode: '0755'
+
+    - name: Ensure partition exists and fills disk
+      community.general.parted:
+        device: "{{ secondary_disk }}"
+        number: 1
+        state: present
+        part_end: "100%"
+        resize: true
+
+    - name: Ensure ext4 filesystem exists
+      community.general.filesystem:
+        fstype: ext4
+        dev: "{{ secondary_disk }}1"
+        resizefs: true
+
+    - name: Mount persistent disk
+      ansible.posix.mount:
+        path: "{{ docker_data_mount }}"
+        src: "{{ secondary_disk }}1"
+        fstype: ext4
+        state: mounted
+
+    ## --- DOCKER INSTALLATION ---
+    - name: Install dependencies
+      ansible.builtin.apt:
+        name: [curl, git, gnupg, ca-certificates]
+        state: present
+        update_cache: true
+
+    - name: Create keyrings directory
+      ansible.builtin.file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: '0755'
+
+    - name: Add Docker GPG key
+      ansible.builtin.get_url:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        dest: /etc/apt/keyrings/docker.asc
+        mode: '0644'
+
+    - name: Add Docker repository
+      ansible.builtin.apt_repository:
+        repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] {{ docker_repository_url }} {{ ansible_facts['distribution_release'] }} stable"
+        state: present
+        filename: docker
+
+    - name: Install Docker Engine
+      ansible.builtin.apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-compose-plugin
+        state: present
+
+    ## --- APP DEPLOYMENT ---
+    - name: Deploy or remove managed applications
+      ansible.builtin.include_tasks: deploy_app.yml
+      loop: "{{ all_managed_apps }}"
+      loop_control:
+        loop_var: app_name
+
+    ## --- TIDY ---
+    - name: Prune unused Docker objects
+      community.docker.docker_prune:
+        containers: true
+        images: true
+        images_filters:
+          dangling: false
+        networks: true
+        volumes: false
+
+  handlers:
+    - name: Restart systemd-resolved
+      ansible.builtin.systemd:
+        name: systemd-resolved
+        state: restarted

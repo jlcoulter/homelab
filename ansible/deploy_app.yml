@@ -1,0 +1,91 @@
+## --- RECONCILE STATE ---
+- name: "Determine if should be active on {{ app_name }}/{{ inventory_hostname }}"
+  ansible.builtin.set_fact:
+    is_assigned: "{{ app_name in (app_mapping[inventory_hostname] | default([])) }}"
+
+## --- NETWORKING (DNS FIX) ---
+- name: Fix port 53 conflict for adguard
+  when:
+    - app_name == "adguard"
+    - is_assigned | bool
+  block:
+    - name: Disable systemd-resolved DNSStubListener
+      ansible.builtin.lineinfile:
+        path: /etc/systemd/resolved.conf
+        regexp: '^#?DNSStubListener='
+        line: 'DNSStubListener=no'
+        owner: root
+        group: root
+        mode: '0644'
+      notify: Restart systemd-resolved
+
+    - name: Force symlink for resolv.conf
+      ansible.builtin.file:
+        src: /run/systemd/resolve/resolv.conf
+        dest: /etc/resolv.conf
+        state: link
+        force: true
+
+    - name: Flush handlers to clear port 53
+      ansible.builtin.meta: flush_handlers
+
+## --- FILE MANAGEMENT ---
+- name: "Ensure directory exists for {{ app_name }}"
+  ansible.builtin.file:
+    path: "/opt/{{ app_name }}"
+    owner: root
+    group: root
+    mode: '0755'
+    state: directory
+  register: app_dir
+
+- name: "Sync compose file for {{ app_name }}"
+  ansible.builtin.copy:
+    owner: root
+    group: root
+    mode: '0644'
+    src: "../apps/{{ app_name }}/docker-compose.yml"
+    dest: "/opt/{{ app_name }}/docker-compose.yml"
+
+## --- HOMEPAGE CONFIG MANAGEMENT ---
+- name: "Ensure Homepage config directory exists"
+  when: 
+    - app_name == "homepage"
+    - is_assigned | bool
+  ansible.builtin.file:
+    path: "/mnt/docker_data/homepage/config"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: "Sync Homepage configuration files"
+  when: 
+    - app_name == "homepage"
+    - is_assigned | bool
+  ansible.builtin.copy:
+    src: "../apps/{{ app_name }}/{{ item }}"
+    dest: "/mnt/docker_data/homepage/config/{{ item }}"
+    owner: root
+    group: root
+    mode: '0644'
+  loop:
+    - settings.yaml
+    - services.yaml
+    - docker.yaml
+    - bookmarks.yaml
+    # widgets.yaml 
+    # kubernetes.yaml
+
+## --- DOCKER ENFORCEMENT ---
+- name: "Set Docker Compose state for {{ app_name }}"
+  community.docker.docker_compose_v2:
+    project_src: "/opt/{{ app_name }}"
+    state: "{{ 'present' if is_assigned else 'absent' }}"
+    wait: true
+
+- name: "Final cleanup for {{ app_name }}"
+  ansible.builtin.file:
+    path: "/opt/{{ app_name }}"
+    state: absent
+  when: not is_assigned | bool
