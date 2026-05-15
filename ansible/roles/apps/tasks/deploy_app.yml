@@ -62,8 +62,8 @@
         mode: '0755'
 
     - name: "Sync configuration files for {{ apps_app_name }}"
-      ansible.builtin.copy:
-        src: "{{ apps_config_map[apps_app_name].src_dir }}/{{ item }}"
+      ansible.builtin.template:
+        src: "{{ playbook_dir }}/../apps/{{ apps_app_name }}/{{ item }}.j2"
         dest: "{{ apps_config_map[apps_app_name].config_dir }}/{{ item }}"
         owner: root
         group: root

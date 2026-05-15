@@ -13,4 +13,8 @@ app_mapping:
   ubuntu-rpi4-1:
     - traefik
 
+# Proxmox Homepage Widget Configuration
+proxmox_token_id: "username@pam!Token ID"
+proxmox_token_secret: "{{ vault_proxmox_token_secret }}"
+
 ansible_python_interpreter: /usr/bin/python3

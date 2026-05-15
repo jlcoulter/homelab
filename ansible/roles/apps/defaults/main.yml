@@ -15,9 +15,8 @@ apps_config_map:
       - services.yaml
       - docker.yaml
       - bookmarks.yaml
-    src_dir: "../apps/homepage"
+      - proxmox.yaml
   traefik:
     config_dir: /etc/traefik
     files:
       - dynamic.yml
-    src_dir: "../apps/traefik"
