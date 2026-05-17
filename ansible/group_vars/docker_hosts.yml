@@ -14,11 +14,11 @@ apps:
       - "80:80"
     restart: unless-stopped
     environment:
-      TZ: "America/New_York"
+      TZ: "Australia/Sydney"
       WEBPASSWORD: "SuperSecurePassword"
     volumes:
-      - "/etc/docker-data/pihole/pihole:/etc/pihole"
-      - "/etc/docker-data/pihole/dnsmasq.d:/etc/dnsmasq.d"
+      - "/mnt/docker-data/pihole/pihole:/etc/pihole"
+      - "/mnt/docker-data/pihole/dnsmasq.d:/etc/dnsmasq.d"
 
   adguardhome-sync:
     image: ghcr.io/bakito/adguardhome-sync
@@ -36,7 +36,7 @@ apps:
       REPLICA1_USERNAME: "jlcoulter"
       REPLICA1_PASSWORD: "admin"
     volumes:
-      - "/etc/docker-data/adguardhome-sync/config:/config"
+      - "/mnt/docker-data/adguardhome-sync/config:/config"
 
   adguardhome:
     image: adguard/adguardhome
@@ -47,8 +47,8 @@ apps:
       - "80:80/tcp"
       - "3000:3000/tcp"
     volumes:
-      - "/mnt/docker_data/adguard/config:/opt/adguardhome/conf"
-      - "/mnt/docker_data/adguard/work:/opt/adguardhome/work"
+      - "/mnt/docker-data/adguard/config:/opt/adguardhome/conf"
+      - "/mnt/docker-data/adguard/work:/opt/adguardhome/work"
 
   homepage:
     image: ghcr.io/gethomepage/homepage:latest
@@ -60,7 +60,7 @@ apps:
       PUID: "1000"
       PGID: "1000"
     volumes:
-      - "/etc/docker-data/homepage/config:/app/config"
+      - "/mnt/docker-data/homepage/config:/app/config"
     networks:
       - name: proxy-network
     labels:
@@ -75,6 +75,65 @@ apps:
       homepage.href: "https://homepage.local"
       homepage.description: "Personal dashboard for services and links"
 
+  trilium:
+    image: zadam/trilium:latest
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    volumes:
+      - "/mnt/docker-data/trilium/config:/home/node/trilium-data"
+    networks:
+      - name: proxy-network
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.trilium.rule: "Host(`trilium.local`)"
+      traefik.http.routers.trilium.entrypoints: "websecure"
+      traefik.http.routers.trilium.tls: "true"
+      traefik.http.services.trilium.loadbalancer.server.port: "8080"
+      homepage.group: "Productivity"
+      homepage.name: "Trilium Notes"
+      homepage.icon: "trilium.png"
+      homepage.href: "https://trilium.local"
+      homepage.description: "Personal knowledge base and note-taking system"
+
+  vikunja-db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: "vikunja"
+      POSTGRES_PASSWORD: "changeme"
+      POSTGRES_DB: "vikunja"
+    volumes:
+      - "/mnt/docker-data/vikunja/db:/var/lib/postgresql/data"
+
+  vikunja:
+    image: vikunja/vikunja:latest
+    ports:
+      - "3456:3456"
+    restart: unless-stopped
+    environment:
+      VIKUNJA_DATABASE_TYPE: "postgres"
+      VIKUNJA_DATABASE_HOST: "vikunja-db"
+      VIKUNJA_DATABASE_DATABASE: "vikunja"
+      VIKUNJA_DATABASE_USER: "vikunja"
+      VIKUNJA_DATABASE_PASSWORD: "changeme"
+      VIKUNJA_SERVICE_FRONTENDURL: "https://vikunja.local"
+    volumes:
+      - "/mnt/docker-data/vikunja/files:/app/vikunja/files"
+    networks:
+      - name: proxy-network
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.vikunja.rule: "Host(`vikunja.local`)"
+      traefik.http.routers.vikunja.entrypoints: "websecure"
+      traefik.http.routers.vikunja.tls: "true"
+      traefik.http.services.vikunja.loadbalancer.server.port: "3456"
+      homepage.group: "Productivity"
+      homepage.name: "Vikunja"
+      homepage.icon: "vikunja.png"
+      homepage.href: "https://vikunja.local"
+      homepage.description: "Self-hosted task and project management"
+
   traefik:
     image: traefik:v3.0
     restart: always
@@ -86,14 +145,14 @@ apps:
       - --entrypoints.web.http.redirections.entryPoint.to=websecure
       - --entrypoints.web.http.redirections.entryPoint.scheme=https
       - --serversTransport.insecureSkipVerify=true
-      - --providers.file.directory=/etc/traefik
+      - --providers.file.directory=/mnt/docker-data/traefik
       - --providers.file.watch=true
     ports:
       - "80:80"
       - "443:443"
       - "8080:8080"
     volumes:
-      - "/etc/traefik:/etc/traefik:ro"
+      - "/mnt/docker-data/traefik:/mnt/docker-data/traefik:ro"
     networks:
       - name: proxy-network
     labels:

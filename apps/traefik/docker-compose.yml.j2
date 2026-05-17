@@ -16,7 +16,7 @@ services:
         mode: ingress
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - /etc/traefik:/etc/traefik:ro
+      - /mnt/docker-data/traefik:/mnt/docker-data/traefik:ro
     command:
       # Enable Dashboard
       - --api.insecure=true 
@@ -35,7 +35,7 @@ services:
       - --providers.swarm.exposedbydefault=false
       - --providers.swarm.network=traefik-public
       # File provider for dynamic config
-      - --providers.file.directory=/etc/traefik
+      - --providers.file.directory=/mnt/docker-data/traefik
       - --providers.file.watch=true
       # Logging
       - --log.level=INFO

@@ -6,7 +6,7 @@
   tasks:
     - name: Ensure persistent data directories exist on the host
       ansible.builtin.file:
-        path: "/etc/docker-data/{{ item }}/config"
+        path: "/mnt/docker-data/{{ item }}/config"
         state: directory
         mode: '0755'
         owner: root
@@ -28,3 +28,4 @@
       loop: "{{ assigned_apps | default([]) }}"
       vars:
         app: "{{ apps[item] }}"
+
