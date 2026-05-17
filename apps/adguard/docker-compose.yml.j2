@@ -1,20 +1,48 @@
-name: adguardhome
-
 services:
   adguardhome:
     image: adguard/adguardhome
-    restart: always
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.adguardhome.rule=Host(`{{ app_metadata['adguard'].hostname }}`)"
+        - "traefik.http.routers.adguardhome.entrypoints=websecure"
+        - "traefik.http.routers.adguardhome.tls=true"
+        - "traefik.http.services.adguardhome.loadbalancer.server.port={{ app_metadata['adguard'].traefik_port }}"
+        - "homepage.group=Network"
+        - "homepage.name=AdGuard Home"
+        - "homepage.icon=adguard.png"
+        - "homepage.href=https://{{ app_metadata['adguard'].hostname }}"
+        - "homepage.description=Network-wide DNS blocker and resolver"
     ports:
-      - 53:53/tcp # plain dns over tcp
-      - 53:53/udp # plain dns over udp
-      - 80:80/tcp # http web interface
-      - 3000:3000/tcp # initial setup web interface
+      - target: 53
+        published: 53
+        protocol: tcp
+        mode: ingress
+      - target: 53
+        published: 53
+        protocol: udp
+        mode: ingress
+      - target: 80
+        published: 80
+        protocol: tcp
+        mode: ingress
+      - target: 3000
+        published: 3000
+        protocol: tcp
+        mode: ingress
     volumes:
-      - /mnt/docker_data/adguard/config:/opt/adguardhome/conf # app configuration
-      - /mnt/docker_data/adguard/work:/opt/adguardhome/work # app working directory
-      
-volumes:
-  config:
-    driver: local
-  work:
-    driver: local
+      - /mnt/docker_data/adguard/config:/opt/adguardhome/conf
+      - /mnt/docker_data/adguard/work:/opt/adguardhome/work
+    networks:
+      - traefik-public
+
+networks:
+  traefik-public:
+    external: true

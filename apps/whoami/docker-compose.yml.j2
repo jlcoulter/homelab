@@ -1,0 +1,26 @@
+services:
+  whoami:
+    image: traefik/whoami
+    command:
+      - --port=2001
+      - --name=iamfoo
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.whoami.rule=Host(`{{ app_metadata['whoami'].hostname }}`)"
+        - "traefik.http.routers.whoami.entrypoints=websecure"
+        - "traefik.http.routers.whoami.tls=true"
+        - "traefik.http.services.whoami.loadbalancer.server.port={{ app_metadata['whoami'].traefik_port }}"
+        - "homepage.group=Utility"
+        - "homepage.name=Whoami"
+        - "homepage.icon=whoami.png"
+        - "homepage.href=https://{{ app_metadata['whoami'].hostname }}"
+        - "homepage.description=Request inspector for debugging HTTP headers"
+    external: true

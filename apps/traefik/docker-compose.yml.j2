@@ -1,14 +1,22 @@
 services:
   traefik:
-    image: traefik:v3.0
-    container_name: traefik
-    restart: always
+    image: ghcr.io/traefik/traefik:v3.7
     ports:
-      - "80:80"     # HTTP
-      - "443:443"   # HTTPS
-      - "8080:8080"   # Traefik Dashboard
+      - target: 80
+        published: 80
+        protocol: tcp
+        mode: ingress
+      - target: 443
+        published: 443
+        protocol: tcp
+        mode: ingress
+      - target: 8080
+        published: 8080
+        protocol: tcp
+        mode: ingress
     volumes:
-      - /etc/traefik:/etc/traefik:ro # Uncomment if using a config file
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /etc/traefik:/etc/traefik:ro
     command:
       # Enable Dashboard
       - --api.insecure=true 
@@ -21,12 +29,46 @@ services:
       - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
       # The "Skip Errors" setting for Proxmox/PBS
       - "--serversTransport.insecureSkipVerify=true"
-      # Providers
+      # Docker Swarm Provider (v3) - Auto-discovery
+      - --providers.swarm=true
+      - --providers.swarm.endpoint=unix:///var/run/docker.sock
+      - --providers.swarm.exposedbydefault=false
+      - --providers.swarm.network=traefik-public
+      # File provider for dynamic config
       - --providers.file.directory=/etc/traefik
       - --providers.file.watch=true
+      # Logging
+      - --log.level=INFO
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.traefik.rule=Host(`traefik.local`)"
       - "traefik.http.routers.traefik.entrypoints=websecure"
       - "traefik.http.routers.traefik.service=api@internal"
       - "traefik.http.routers.traefik.tls=true"
+      - "traefik.http.services.traefik.loadbalancer.server.port=8080"
+      - "homepage.group=Infrastructure"
+      - "homepage.name=Traefik"
+      - "homepage.icon=traefik.png"
+      - "homepage.href=https://traefik.local"
+      - "homepage.description=Reverse proxy and routing dashboard"
+    networks:
+      - traefik-public
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      update_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: continue
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+
+networks:
+  traefik-public:
+    external: true

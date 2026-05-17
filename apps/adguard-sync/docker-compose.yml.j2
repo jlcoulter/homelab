@@ -1,8 +1,6 @@
----
 services:
   adguardhome-sync:
     image: ghcr.io/bakito/adguardhome-sync
-    container_name: adguardhome-sync
     command: run
     environment:
       # CRON: Run every 10 minutes (example)
@@ -21,5 +19,27 @@ services:
     volumes:
       - /mnt/docker_data/adguard-sync/config/adguardhome-sync.yaml:/config/adguardhome-sync.yaml
     ports:
-      - 8081:8080
-    restart: unless-stopped
+      - target: 8080
+        published: 8081
+        protocol: tcp
+        mode: ingress
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.adguardsync.rule=Host(`{{ app_metadata['adguard-sync'].hostname }}`)"
+        - "traefik.http.routers.adguardsync.entrypoints=websecure"
+        - "traefik.http.routers.adguardsync.tls=true"
+        - "traefik.http.services.adguardsync.loadbalancer.server.port={{ app_metadata['adguard-sync'].traefik_port }}"
+      - "homepage.group=Network"
+      - "homepage.name=AdGuard Sync"
+      - "homepage.icon=adguard-sync.png"
+      - "homepage.href=https://{{ app_metadata['adguard-sync'].hostname }}"
+      - "homepage.description=Synchronize AdGuard Home configuration between instances"
+    external: true
