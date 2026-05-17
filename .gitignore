@@ -19,3 +19,6 @@ crash.*.log
 *.retry
 .ansible
 .vault_pass
+
+# all
+.env
