@@ -1,0 +1,42 @@
+all:
+  children:
+    docker_hosts:
+      children:
+        proxmox:
+          hosts:
+            vm-docker0:
+              ansible_host: 10.1.10.100
+              assigned_apps:
+                - portainer
+                - pihole
+            vm-docker1:
+              ansible_host: 10.1.10.101
+              assigned_apps:
+                - adguardhome-sync
+                - homepage
+            vm-docker2:
+              ansible_host: 10.1.10.102
+              assigned_apps:
+                - traefik
+            vm-docker3:
+              ansible_host: 10.1.10.103
+            vm-docker4:
+              ansible_host: 10.1.10.104
+        raspberry_pis_ubuntu:
+          hosts:
+            ubuntu-rpi4-0: 
+              ansible_host: 10.1.10.120
+            ubuntu-rpi4-1: 
+              ansible_host: 10.1.10.121
+    raspberry_pis_alpine:
+      hosts:
+        alpine-rpi3-0: { ansible_host: 10.1.10.122 }
+        alpine-rpi3-1: { ansible_host: 10.1.10.123 }
+        alpine-rpi3-2: { ansible_host: 10.1.10.124 }
+    gpu_hosts:
+      hosts:
+        docker0: { ansible_host: 10.1.10.125 }
+    zima:
+      hosts:
+        zima0: { ansible_host: 10.1.10.126 }
+        zima1: { ansible_host: 10.1.10.127 }

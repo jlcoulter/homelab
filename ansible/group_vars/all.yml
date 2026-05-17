@@ -1,20 +1,2 @@
-app_mapping:
-  prod-docker-01:
-    - adguard
-    - homepage
-  test-docker-01:
-    - gitea
-  ubuntu-rpi3-0: []
-  ubuntu-rpi3-1: []
-  ubuntu-rpi3-2: []
-  ubuntu-rpi4-0:
-    - adguard
-    - adguard-sync
-  ubuntu-rpi4-1:
-    - traefik
-
-# Proxmox Homepage Widget Configuration
-proxmox_token_id: "username@pam!Token ID"
-proxmox_token_secret: "{{ vault_proxmox_token_secret }}"
-
+---
 ansible_python_interpreter: /usr/bin/python3

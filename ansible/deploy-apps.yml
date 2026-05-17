@@ -1,0 +1,30 @@
+---
+- name: Deploy Apps to Multiple Hosts Safely
+  hosts: docker_hosts
+  become: true
+
+  tasks:
+    - name: Ensure persistent data directories exist on the host
+      ansible.builtin.file:
+        path: "/etc/docker-data/{{ item }}/config"
+        state: directory
+        mode: '0755'
+        owner: root
+        group: root
+      loop: "{{ assigned_apps | default([]) }}"
+
+    - name: Ensure Host Containers are running
+      community.docker.docker_container:
+        name: "{{ item }}"
+        image: "{{ app.image }}"
+        state: started
+        command: "{{ app.command | default(omit) }}"
+        restart_policy: "{{ app.restart | default('unless-stopped') }}"
+        ports: "{{ app.ports | default(omit) }}"
+        env: "{{ app.env | default(omit) }}"
+        labels: "{{ app.labels | default(omit) }}"
+        networks: "{{ app.networks | default(omit) }}"
+        volumes: "{{ app.volumes | default(omit) }}"
+      loop: "{{ assigned_apps | default([]) }}"
+      vars:
+        app: "{{ apps[item] }}"

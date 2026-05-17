@@ -1,0 +1,6 @@
+---
+- name: Setup Docker on engines and VMs, skipping Raspberry Pis if unneeded
+  hosts: vms, docker_engines, proxmox
+  become: true
+  roles:
+    - docker

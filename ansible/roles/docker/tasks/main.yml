@@ -1,37 +1,59 @@
-- name: Install dependencies
+---
+- name: Install prerequisite system packages
   ansible.builtin.apt:
-    name: [curl, git, gnupg, ca-certificates]
+    name:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - gnupg
+      - lsb-release
+      - python3-pip
     state: present
     update_cache: true
-  tags: docker
 
-- name: Create keyrings directory
+- name: Create directory for Docker APT keyring
   ansible.builtin.file:
     path: /etc/apt/keyrings
     state: directory
     mode: '0755'
-  tags: docker
 
-- name: Add Docker GPG key
+- name: Add Docker official GPG key
   ansible.builtin.get_url:
     url: https://download.docker.com/linux/ubuntu/gpg
     dest: /etc/apt/keyrings/docker.asc
     mode: '0644'
-  tags: docker
 
-- name: Add Docker repository
+- name: Set up the Docker APT repository
   ansible.builtin.apt_repository:
-    repo: "deb [arch={{ docker_arch }} signed-by=/etc/apt/keyrings/docker.asc] {{ docker_repository_url }} {{ ansible_distribution_release }} stable"
+    repo: >
+      deb [arch={{ 'amd64' if ansible_architecture == 'x86_64' else 'arm64' }}
+      signed-by=/etc/apt/keyrings/docker.asc]
+      https://download.docker.com/linux/ubuntu
+      {{ ansible_distribution_release }} stable
     state: present
     filename: docker
-  tags: docker
 
-- name: Install Docker Engine
+- name: Install Docker Engine and Compose plugin
   ansible.builtin.apt:
     name:
       - docker-ce
       - docker-ce-cli
       - containerd.io
+      - docker-buildx-plugin
       - docker-compose-plugin
     state: present
-  tags: docker
+    update_cache: true
+
+- name: Ensure Docker service is running and enabled
+  ansible.builtin.systemd:
+    name: docker
+    state: started
+    enabled: true
+
+- name: Configure Docker Swarm for Proxmox cluster
+  ansible.builtin.include_tasks:
+    file: swarm.yml
+    apply:
+      tags: [proxmox, swarm, docker]
+  when: inventory_hostname in groups['proxmox']
+  tags: [proxmox, swarm]

@@ -1,0 +1,104 @@
+apps:
+  portainer:
+    image: portainer/portainer-ce:latest
+    ports:
+      - "9443:9443"
+    restart: unless-stopped
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "portainer_data:/data"
+
+  pihole:
+    image: pihole/pihole:latest
+    ports:
+      - "80:80"
+    restart: unless-stopped
+    environment:
+      TZ: "America/New_York"
+      WEBPASSWORD: "SuperSecurePassword"
+    volumes:
+      - "/etc/docker-data/pihole/pihole:/etc/pihole"
+      - "/etc/docker-data/pihole/dnsmasq.d:/etc/dnsmasq.d"
+
+  adguardhome-sync:
+    image: ghcr.io/bakito/adguardhome-sync
+    command: run
+    ports:
+      - "8081:8080"
+    restart: unless-stopped
+    environment:
+      CRON: "*/10 * * * *"
+      RUN_ON_START: "true"
+      ORIGIN_URL: "http://10.1.10.100:80"
+      ORIGIN_USERNAME: "jlcoulter"
+      ORIGIN_PASSWORD: "admin"
+      REPLICA1_URL: "http://10.1.10.93:80"
+      REPLICA1_USERNAME: "jlcoulter"
+      REPLICA1_PASSWORD: "admin"
+    volumes:
+      - "/etc/docker-data/adguardhome-sync/config:/config"
+
+  adguardhome:
+    image: adguard/adguardhome
+    restart: always
+    ports:
+      - "53:53/tcp"
+      - "53:53/udp"
+      - "80:80/tcp"
+      - "3000:3000/tcp"
+    volumes:
+      - "/mnt/docker_data/adguard/config:/opt/adguardhome/conf"
+      - "/mnt/docker_data/adguard/work:/opt/adguardhome/work"
+
+  homepage:
+    image: ghcr.io/gethomepage/homepage:latest
+    restart: unless-stopped
+    ports:
+      - "3333:3000"
+    environment:
+      HOMEPAGE_ALLOWED_HOSTS: "homepage.local"
+      PUID: "1000"
+      PGID: "1000"
+    volumes:
+      - "/etc/docker-data/homepage/config:/app/config"
+    networks:
+      - name: proxy-network
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.homepage.rule: "Host(`homepage.local`)"
+      traefik.http.routers.homepage.entrypoints: "websecure"
+      traefik.http.routers.homepage.tls: "true"
+      traefik.http.services.homepage.loadbalancer.server.port: "3000"
+      homepage.group: "Utility"
+      homepage.name: "Homepage"
+      homepage.icon: "homepage.png"
+      homepage.href: "https://homepage.local"
+      homepage.description: "Personal dashboard for services and links"
+
+  traefik:
+    image: traefik:v3.0
+    restart: always
+    command:
+      - --api.insecure=true
+      - --api.dashboard=true
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      - --entrypoints.web.http.redirections.entryPoint.to=websecure
+      - --entrypoints.web.http.redirections.entryPoint.scheme=https
+      - --serversTransport.insecureSkipVerify=true
+      - --providers.file.directory=/etc/traefik
+      - --providers.file.watch=true
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    volumes:
+      - "/etc/traefik:/etc/traefik:ro"
+    networks:
+      - name: proxy-network
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.traefik.rule: "Host(`traefik.local`)"
+      traefik.http.routers.traefik.entrypoints: "websecure"
+      traefik.http.routers.traefik.service: "api@internal"
+      traefik.http.routers.traefik.tls: "true"

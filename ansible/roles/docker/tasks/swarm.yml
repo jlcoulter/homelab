@@ -1,0 +1,44 @@
+---
+- name: Check if Docker Swarm is already initialized on Leader
+  ansible.builtin.command: docker info --format '{{ '{{' }}.Swarm.LocalNodeState{{ '}}' }}'
+  register: swarm_status
+  changed_when: false
+  when: inventory_hostname == 'vm-docker0'
+
+- name: Initialize Docker Swarm on Leader (vm-docker0)
+  ansible.builtin.command: >
+    docker swarm init
+    --advertise-addr {{ ansible_host }}
+  when:
+    - inventory_hostname == 'vm-docker0'
+    - swarm_status.stdout != "active"
+
+- name: Get Swarm Worker Join Token from Leader
+  ansible.builtin.command: docker swarm join-token -q worker
+  register: worker_token
+  changed_when: false
+  when: inventory_hostname == 'vm-docker0'
+
+- name: Check Swarm status on Workers
+  ansible.builtin.command: docker info --format '{{ '{{' }}.Swarm.LocalNodeState{{ '}}' }}'
+  register: worker_swarm_status
+  changed_when: false
+  when: inventory_hostname != 'vm-docker0'
+
+- name: Join Workers to the Swarm
+  ansible.builtin.command: >
+    docker swarm join
+    --token {{ hostvars['vm-docker0']['worker_token']['stdout'] }} 
+    {{ hostvars['vm-docker0']['ansible_host'] }}:2377
+  when:
+    - inventory_hostname != 'vm-docker0'
+    - worker_swarm_status.stdout != "active"
+
+- name: Create attachable overlay network on Leader
+  community.docker.docker_network:
+    name: proxy-network
+    driver: overlay
+    attachable: true
+    state: present
+  delegate_to: vm-docker0
+  run_once: true
